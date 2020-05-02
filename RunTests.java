@@ -1,4 +1,4 @@
-public class SymbolTableRow{
+class SymbolTableRow{
 	String name;
 	String type;
 	String cat;
@@ -14,8 +14,8 @@ public class SymbolTableRow{
 		this.cat = cat;
 	}
 	public SymbolTableRow(String name, String type, String cat, int value){
-		this.value = value;
 		this(name,type,cat);
+		this.value = value;
 	}
 	public SymbolTableRow(String name, String type, String cat, int value, int nbparam, int rank, String scope, int nblock){
 		this(name,type,cat);
@@ -29,17 +29,17 @@ public class SymbolTableRow{
 
 public class RunTests{
 	public static void main(String[] args){
-		example1();
+		example3();
 	}
 
-	public static void example1(){
+	public static void example1(){			// seems to work
 		// building the symbol table :
 		SymbolTableRow[] st = new SymbolTableRow[1];
 		st[0] = new SymbolTableRow("main", "void", "fonction");
 		
 		// building the abstract tree :
 		Program program = new Program();
-		program.instructions[0] = new Function("main");
+		program.functions[0] = new Function("main");
 
 		// maybe call something like a print method from the "program" instance to print some assembly code.
 		program.print(st);
@@ -75,7 +75,7 @@ public class RunTests{
 
 		// building the abstract tree :
 		Program program = new Program();
-		program.instructions[0] = new Function("main");
+		program.functions[0] = new Function("main");
 
 		// printing assembly code :
 		program.print(st);
@@ -114,19 +114,20 @@ public class RunTests{
 
 		// building the abstract tree :
 		Program program = new Program();
-		program.instructions[0] = new Function("main");
-		program.instructions[0].instructions[0] = new Assignment(); // k = 2;
-		program.instructions[0].instructions[0].left = new Variable("k");
-		program.instructions[0].instructions[0].right = new Constant(2);
-		program.instructions[0].instructions[1] = new Assignment(); // l = i + 3*j;
-		program.instructions[0].instructions[1].left = new Variable("l");
-		program.instructions[0].instructions[1].right = new Binary_Expression(); // i + 3*j;
-		program.instructions[0].instructions[1].right.operand = '+';
-		program.instructions[0].instructions[1].right.left = new Variable("i");
-		program.instructions[0].instructions[1].right.right = new BinaryExpression(); // 3*j
-		program.instructions[0].instructions[1].right.right.operand = '*';
-		program.instructions[0].instructions[1].right.right.left = new Constant(3);
-		program.instructions[0].instructions[1].right.right.right = new Variable("j");
+		program.functions[0] = new Function("main");
+		program.functions[0].instructions = new Instruction[10];
+		program.functions[0].instructions[0] = new Assignment(); // k = 2;
+		((Assignment) program.functions[0].instructions[0]).left = new Variable("k");
+		((Assignment) program.functions[0].instructions[0]).right = new Constant(2);
+		program.functions[0].instructions[1] = new Assignment(); // l = i + 3*j;
+		((Assignment) program.functions[0].instructions[1]).left = new Variable("l");
+		((Assignment) program.functions[0].instructions[1]).right = new Binary_Expression(); // i + 3*j;
+		((Binary_Expression) ((Assignment) program.functions[0].instructions[1]).right).operator = '+';
+		((Binary_Expression) ((Assignment) program.functions[0].instructions[1]).right).left = new Variable("i");
+		((Binary_Expression) ((Assignment) program.functions[0].instructions[1]).right).right = new Binary_Expression(); // 3*j
+		((Binary_Expression) ((Binary_Expression) ((Assignment) program.functions[0].instructions[1]).right).right).operator = '*';
+		((Binary_Expression) ((Binary_Expression) ((Assignment) program.functions[0].instructions[1]).right).right).left = new Constant(3);
+		((Binary_Expression) ((Binary_Expression) ((Assignment) program.functions[0].instructions[1]).right).right).right = new Variable("j");
 
 		program.print(st);
 
@@ -247,13 +248,13 @@ class Function extends Instruction{
 
 	public Function(String name){this.name = name;}
 
-	public void print(SymbolTableRow st){
+	public void print(SymbolTableRow[] st){
 		System.out.print("function_"+this.name+":\n"
 						+"PUSH(LP)\n"
 						+"PUSH(BP)\n"
 						+"MOVE(SP,BP)\n");
 		for (int i = 0; i < 10 && this.instructions[i] != null; i++)
-			this.instructions[i].print();
+			this.instructions[i].print(st);
 		System.out.print("MOVE(BP,SP)\n"
 						+"POP(BP)\n"
 						+"POP(LP)\n"
@@ -261,7 +262,9 @@ class Function extends Instruction{
 	}
 }
 
-abstract class Instruction {}
+abstract class Instruction {
+	abstract public void print(SymbolTableRow[] st);
+}
 
 class Assignment extends Instruction{
 	// children : a left member and a right member. 
@@ -270,42 +273,49 @@ class Assignment extends Instruction{
 	// (ReadNode, some arithmetic expression, some constant, some variable, function call...)
 	Variable left;
 	Expression right;
-
+	public void Assignment(){}
 	public void print(SymbolTableRow[] st){
 		// first evaluate the expression on the right, push the result into the stack
 		right.print(st); // assume result is pushed into the stack
 		System.out.print("POP(r0)\n"
-						+"ST(r0, global_"+left.name+")"); // probably store into the global integer for now... Might be more intricate later on if there is ambiguity
+						+"ST(r0, global_"+left.name+")\n"); // probably store into the global integer for now... Might be more intricate later on if there is ambiguity
 	}
 }
 
 class Write extends Instruction{
 	// not sure what that would do exactly (write into a file ?)
+	public void print(SymbolTableRow[] st){}
 }
 
 class Read extends Instruction{
 	// looks like this is for reading input from the user.
+	public void print(SymbolTableRow[] st){}
 }
 
 class If extends Instruction{
 	Expression condition;
-	Block if;
-	Block else;
+	Block blockif;
+	Block blockelse;
+	public void print(SymbolTableRow[] st){}
 }
 class While extends Instruction{
 	Expression condition;
 	Block block;
+	public void print(SymbolTableRow[] st){}
 }
 
 class FunctionCall extends Instruction{
 	String name;
+	public void print(SymbolTableRow[] st){}
 }
 
 class Block{
 	Instruction[] instructions = new Instruction[10];
 }
 
-abstract class Expression{}
+abstract class Expression{
+	abstract public void print(SymbolTableRow[] st);
+}
 
 class Binary_Expression extends Expression{
 	char operator; // < > + - * / 
@@ -355,9 +365,9 @@ class Variable extends Expression{
 	public void print(SymbolTableRow[] st){
 		// which label ? just try to match the name for now, and make sure the type is "int".
 		// Maybe later on we'll have to do additional checks because maybe a name without a scope is ambiguous for example.
-		String label;
+		String label = "";
 		for (int i = 0; i < st.length; i++){
-			if (st[i].type == "int" && st[i].name.equals(this.name)){
+			if (st[i].type.equals("int") && st[i].name.equals(this.name)){
 				label = st[i].cat + "_" + st[i].name;
 				break;
 			}

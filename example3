@@ -1,0 +1,44 @@
+.include beta.uasm
+. = 0
+CMOVE(stack,SP)	| Makes the stack pointer (SP) point to the beginning of the 'stack' label at the end of the file.
+CALL(function_main)	| BR(function_main, LP). This saves PC into LP before branching to the function.
+HALT()
+
+
+global_i: LONG(10)
+global_j: LONG(20)
+global_k: LONG(0)
+global_l: LONG(0)
+
+
+function_main:
+PUSH(LP)
+PUSH(BP)
+MOVE(SP,BP)
+ADDC(r31,2,r0)
+PUSH(r0)
+POP(r0)
+ST(r0, global_k)
+LD(global_i,r0)
+PUSH(r0)
+ADDC(r31,3,r0)
+PUSH(r0)
+LD(global_j,r0)
+PUSH(r0)
+POP(r0)
+POP(r1)
+MUL(r0,r1,r0)
+PUSH(r0)
+POP(r0)
+POP(r1)
+ADD(r0,r1,r0)
+PUSH(r0)
+POP(r0)
+ST(r0, global_l)
+MOVE(BP,SP)
+POP(BP)
+POP(LP)
+RTN()		| JMP(LP)
+
+
+stack:

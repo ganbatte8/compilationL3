@@ -1,0 +1,105 @@
+----------------------probably required----------------------
+.include beta.uasm
+. = 0
+CMOVE(stack,SP)	| Makes the stack pointer (SP) point to the beginning of the "stack" label
+CMOVE(exit,LP)
+CALL(function_main)	| BR(function_main, LP). This writes the current address to LP before branching to the function.
+HALT()
+
+var_a : LONG(2)
+
+function_main:
+PUSH(LP)
+PUSH(BP)
+MOVE(SP,BP)
+MOVE(BP,SP)
+POP(BP)
+POP(LP)
+RTN()		| JMP(LP)
+
+
+stack:
+
+
+
+---------------------------- beta uasm example that features a couple of function calls with an argument ------------
+.include beta.uasm
+. = 0
+CMOVE(stack,SP)	| Makes the stack pointer (SP) point to the beginning of the "stack" label at the end of the file.
+CALL(function_main)	| BR(function_main, LP). This saves PC into LP before branching to the function.
+HALT()
+
+var_a : LONG(2)
+
+function_main:
+PUSH(LP)		| save LP into the stack. Translated as  ADDC(SP, 4, SP)   ST(LP, -4, SP)  
+PUSH(BP)
+MOVE(SP,BP)		| refresh BP with current stack pointer. ADD(SP, r31, BP)
+
+ADDC(r31, 3, r0)
+PUSH(r0)		| trying to pass r0 as an argument to function_squared by pushing it before the call instruction
+CALL(function_squared,1)	| the '1' performs a SUBC(SP,4,SP) when we return on the next line; this means we don't have to pop the args
+ADD(r31,r0,r1)
+ADDC(r31,2,r0)
+PUSH(r0)
+CALL(function_squared,1)
+
+POP(BP)		| retrieve BP and LP into the stack
+POP(LP)
+RTN()		| JMP(LP)
+
+
+function_squared:
+PUSH(LP)
+PUSH(BP)
+MOVE(SP,BP)
+GETFRAME(-4*3, r0)	| trying to fetch the argument into r0
+					| note that SP points to the next unused address of the stack. Therefore we have to go up 3 longwords so that we skip the unused address, the address in which we pushed BP, and the address in which we pushed LP.
+MUL(r0,r0,r0)
+POP(BP)
+POP(LP)
+RTN()
+
+
+		| how do I get the argument ??
+
+MOVE(BP,SP)
+POP(BP)
+POP(LP)
+RTN()
+
+
+
+stack:
+
+
+----------------------------------------------------------------------------------------------------------------
+
+
+------------------------exemple 1----------------------------
+arbre :
+(programme)(fonction main)
+TDS : 
+{nom = main; type = void; cat = fonction}
+
+
+------------------------exemple 2----------------------------
+arbre:
+(prog)(fonc main)(=)(identifier k)
+					(const 2)
+				 (=)(identifier l)
+				 	(+)				(identifier i)
+					 				
+TDS : 
+{nom = main; type = void; cat = fonction}
+{nom = i; type=int; cat=global, val=10}
+{nom = j; type=int; cat=global, val=20}
+{nom = k; type=int; cat=global}
+{nom = l; type=int; cat=global}
+
+------------------------exemple 3----------------------------
+------------------------exemple 4----------------------------
+------------------------exemple 5----------------------------
+------------------------exemple 6----------------------------
+------------------------exemple 7----------------------------
+------------------------exemple 8----------------------------
